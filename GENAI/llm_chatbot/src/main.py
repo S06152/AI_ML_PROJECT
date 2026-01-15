@@ -1,4 +1,4 @@
-from src.ui.pages import ChatbotApp
+from ui.pages import ChatbotApp
 
 if __name__ == "__main__":
     app = ChatbotApp()
