@@ -1,26 +1,4 @@
-# ===============================
-# Core UI Framework
-# ===============================
-streamlit>=1.32.0
-
-# ===============================
-# Environment Management
-# ===============================
-python-dotenv>=1.0.1
-
-# ===============================
-# LangChain & LLM Integration
-# ===============================
-langchain>=0.2.0
-langchain-core>=0.2.0
-langchain-groq>=0.1.4
-
-# ===============================
-# Typing & Validation
-# ===============================
-typing-extensions>=4.9.0
-
-# ===============================
-# Optional (Enterprise-friendly)
-# ===============================
-loguru>=0.7.2
+python-dotenv
+streamlit
+langchain
+langchain-groq
