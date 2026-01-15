@@ -1,4 +1,4 @@
-from src.config.env import EnvironmentConfig
+from config.env import EnvironmentConfig
 
 class AppSettings:
     """Centralized application settings."""

@@ -1,5 +1,5 @@
 import streamlit as st
-from src.config.settings import AppSettings
+from config.settings import AppSettings
 
 class Sidebar:
     """Sidebar UI component."""

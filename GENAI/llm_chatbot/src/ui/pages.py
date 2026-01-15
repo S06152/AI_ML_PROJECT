@@ -1,8 +1,8 @@
 import streamlit as st
-from src.config.settings import AppSettings
-from src.services.chatbot_service import ChatbotService
-from src.ui.sidebar import Sidebar
-from src.utils.validators import InputValidator
+from config.settings import AppSettings
+from services.chatbot_service import ChatbotService
+from ui.sidebar import Sidebar
+from utils.validators import InputValidator
 
 class ChatbotApp:
     """Main Streamlit application class."""
