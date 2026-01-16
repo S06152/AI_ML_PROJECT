@@ -1,5 +1,3 @@
-from config.env import EnvironmentConfig
-
 class AppSettings:
     """Centralized application settings."""
 
@@ -16,5 +14,3 @@ class AppSettings:
         "llama-3.1-8b-instant",
         "openai/gpt-oss-120b",
     ]
-
-    GROQ_API_KEY = EnvironmentConfig.get("GROQ_API_KEY")
