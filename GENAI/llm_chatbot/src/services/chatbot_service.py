@@ -1,5 +1,5 @@
-from core.llm_client import GroqLLMClient
-from core.response_chain import ResponseChain
+from src.core.llm_client import GroqLLMClient
+from src.core.response_chain import ResponseChain
 
 class ChatbotService:
     """High-level chatbot orchestration."""
