@@ -12,9 +12,6 @@ class Sidebar:
         temperature = st.sidebar.slider("🔥 Temperature", 0.0, 1.0, AppSettings.DEFAULT_TEMPERATURE)
         max_tokens = st.sidebar.slider("📏 Max Tokens", AppSettings.MIN_TOKENS, AppSettings.MAX_TOKENS, AppSettings.DEFAULT_MAX_TOKENS)
 
-        st.sidebar.markdown("---")
-        st.sidebar.caption("🚀 Enterprise AI Chatbot")
-
         return {
             "api_key": api_key,
             "model": model,

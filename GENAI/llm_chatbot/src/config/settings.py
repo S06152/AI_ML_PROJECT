@@ -1,7 +1,7 @@
 class AppSettings:
     """Centralized application settings."""
 
-    APP_TITLE = "Enterprise Q&A Chatbot with GROQ"
+    APP_TITLE = "Enterprise Q & A Chatbot with GROQ"
 
     DEFAULT_TEMPERATURE = 0.7
     DEFAULT_MAX_TOKENS = 150
