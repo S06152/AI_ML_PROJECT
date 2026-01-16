@@ -1,5 +1,5 @@
 from langchain_core.output_parsers import StrOutputParser
-from core.prompt import PromptFactory
+from src.core.prompt import PromptFactory
 
 class ResponseChain:
     """Builds LangChain processing pipeline."""
