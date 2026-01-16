@@ -12,8 +12,7 @@ class ChatbotApp:
         self.chatbot_service = ChatbotService()
 
     def run(self) -> None:
-        #st.set_page_config(page_title = AppSettings.APP_TITLE, page_icon = "🤖",layout = "wide")
-        #st.title("🤖 Enterprise Q & A Chatbot")
+        st.set_page_config(page_title = AppSettings.APP_TITLE, page_icon = "🤖",layout = "wide")
         st.title("🤖 Enterprise Q & A Chatbot")
 
         sidebar_config = self.sidebar.render()
