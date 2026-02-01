@@ -302,7 +302,6 @@ def streamlit_app():
     model = st.sidebar.selectbox("🧠 LLM Model:", ["qwen/qwen3-32b", "groq/compound-mini", "llama-3.1-8b-instant", "openai/gpt-oss-120b"])
     temperature = st.sidebar.slider("🔥 Temperature:", min_value = 0.0, max_value = 1.0, value = 0.7)
     max_tokens = st.sidebar.slider("📏 Max Tokens:", min_value = 50, max_value = 300, value = 150)
-    user_query = st.text_input("Ask your Risk Analysis query")
 
     user_prompt = st.sidebar.text_input("📝 System Prompt: ", help = "Enter the instructions for the LLM Model")
 
@@ -345,13 +344,11 @@ def streamlit_app():
         rag_chain = create_rag_chain(retriever, prompt, llm)
 
     # ---------------- Query ----------------   
-    st.subheader("🧠 Risk Analysis")
-    query = st.text_input("Enter your query")
-    if st.button("🚀 Analyze"):
-        with st.spinner("🔍 Analyzing risks..."):
-            result = query_rag_chain(rag_chain, query)
-        st.subheader("📊 Management Risk Analysis")
-        st.markdown(result)
+    user_query = st.text_input("Ask your Risk Analysis query")
+    with st.spinner("🔍 Assistance is thinking"):
+        result = query_rag_chain(rag_chain, user_query)
+
+    st.markdown(result.content)
 
 # -------------------------------------------------------------------
 # 12. MAIN
