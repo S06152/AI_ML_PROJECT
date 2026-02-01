@@ -140,8 +140,8 @@ def create_retriever(vectorstore: FAISS, search_type: str = "similarity", k: int
     search_type : str, optional
         Type of search to perform (default is "similarity")
         Options: "similarity", "mmr", "similarity_score_threshold"
-    search_kwargs : dict, optional
-        Additional search parameters (e.g., {'k': 4} for top 4 results)
+        k : int, optional
+        Number of documents to retrieve (default is 3)
     
     Returns:
     --------
@@ -157,7 +157,7 @@ def create_retriever(vectorstore: FAISS, search_type: str = "similarity", k: int
 # 6. LLM INITIALIZATION
 # -------------------------------------------------------------------
 
-def initialize_llm(model: str, api_key: str , temperature: float = 0.3, max_tokens: int = 800) -> ChatGroq:
+def initialize_llm(model: str, api_key: str, temperature: float = 0.3, max_tokens: int = 800) -> ChatGroq:
 
     """
     Initialize a ChatGroq LLM instance.
@@ -168,22 +168,21 @@ def initialize_llm(model: str, api_key: str , temperature: float = 0.3, max_toke
         Name of the model to use 
     api_key : str
         Groq API key. 
-    temperature : float,
-        Sampling temperature (default is 0.0)
+    temperature : float
+        Sampling temperature (default is 0.7)
     max_tokens : int
-        Maximum tokens in response (default is None)
+        Maximum tokens in response (default is 300)
     
     Returns:
     --------
     ChatGroq
         Initialized ChatGroq LLM instance
     """
-
     # Get API key from parameter or environment
     if not api_key:
         raise ValueError("GROQ_API_KEY is missing.")
                 
-    llm = ChatGroq(model_name = model, api_key = api_key, temperature = temperature, max_tokens = max_tokens)
+    llm = ChatGroq(model=model, api_key=api_key, temperature=temperature, max_tokens=max_tokens)
     
     return llm
 
@@ -192,6 +191,19 @@ def initialize_llm(model: str, api_key: str , temperature: float = 0.3, max_toke
 # -------------------------------------------------------------------
 
 def create_rag_prompt(user_prompt: str) -> ChatPromptTemplate:
+    """
+    Create a RAG prompt template.
+    
+    Parameters:
+    -----------
+    user_prompt : str
+        Custom system prompt
+    
+    Returns:
+    --------
+    ChatPromptTemplate
+        Prompt template for the RAG chain
+    """
     system_prompt = f"""
     {user_prompt}
 
@@ -235,7 +247,6 @@ def format_docs(docs: List[Document]) -> str:
 # -------------------------------------------------------------------
 
 def create_rag_chain(retriever: VectorStoreRetriever, prompt: ChatPromptTemplate, llm: BaseLanguageModel):
-
     """
     Create a complete RAG (Retrieval-Augmented Generation) chain.
     
@@ -288,7 +299,8 @@ def query_rag_chain( rag_chain, query: str) -> str:
    
     response = rag_chain.invoke(query)
     
-    return response.content
+    # Ensure the response is returned as a string
+    return response if isinstance(response, str) else response.content
 
 # -------------------------------------------------------------------
 # 11. Streamlit UI
@@ -296,29 +308,29 @@ def query_rag_chain( rag_chain, query: str) -> str:
 def streamlit_app():
     st.set_page_config(page_title = "Project Risk Analysis Assist", page_icon = "🔍", layout = "wide")
     st.title("🔍 Project Risk Analysis Assist")
-    user_query = st.text_input("Ask your Risk Analysis query")
-
+    
     st.sidebar.header("⚙️ Configuration")
     api_key = st.sidebar.text_input("🔑 Groq API Key:", type = "password")
     model = st.sidebar.selectbox("🧠 LLM Model:", ["qwen/qwen3-32b", "groq/compound-mini", "llama-3.1-8b-instant", "openai/gpt-oss-120b"])
     temperature = st.sidebar.slider("🔥 Temperature:", min_value = 0.0, max_value = 1.0, value = 0.7)
     max_tokens = st.sidebar.slider("📏 Max Tokens:", min_value = 50, max_value = 300, value = 150)
 
-    user_prompt = st.sidebar.text_input("📝 System Prompt: ", help = "Enter the instructions for the LLM Model")
+    user_prompt = st.sidebar.text_area("📝 System Prompt: ", help = "Enter the instructions for the LLM Model")
 
     # File uploader for document upload in the sidebar
     uploaded_file = st.sidebar.file_uploader("📂 Upload your document", type=["txt", "pdf", "docx", "csv", "xlsx"], help="Supported file types: .txt, .pdf, .docx, .csv, .xlsx")
 
+    # Validation checks
     if not api_key:
-        st.warning("API Key is required")
+        st.warning("⚠️ Please enter your Groq API Key in the sidebar to proceed.")
         st.stop()
 
     if not user_prompt:
-        st.warning("Custom prompt message is required")
+        st.warning("⚠️ Custom prompt message is required.")
         st.stop()
 
     if not uploaded_file:
-        st.warning("Please upload a document to proceed.")
+        st.info("📁 Please upload an Excel (.xlsx) document in the sidebar to proceed.")
         st.stop()
 
     # Validate file type
@@ -327,28 +339,33 @@ def streamlit_app():
         st.warning("Only .xlsx files are currently supported.")
         st.stop()
 
-    with st.spinner("📄 Searching..."):
-        # Load & prepare documents
-        documents = load_excel_documents(uploaded_file)
-        chunks = split_documents_into_chunks(documents)
+    # Load & prepare documents
+    documents = load_excel_documents(uploaded_file)
+    chunks = split_documents_into_chunks(documents)
 
-        # Vector store
-        embeddings = create_embeddings()
-        vectorstore = create_faiss_vectorstore(chunks, embeddings)
-        retriever = create_retriever(vectorstore)
+    # Vector store
+    embeddings = create_embeddings()
+    vectorstore = create_faiss_vectorstore(chunks, embeddings)
+    retriever = create_retriever(vectorstore)
 
-        # Initialize GROQ LLM Model
-        llm = initialize_llm(model = model, api_key = api_key, temperature = temperature, max_tokens = max_tokens)
+    # Initialize GROQ LLM Model
+    llm = initialize_llm(model=model, api_key=api_key, temperature=temperature, max_tokens=max_tokens)
 
-        # RAG
-        prompt = create_rag_prompt(user_prompt)
-        rag_chain = create_rag_chain(retriever, prompt, llm)
+    # RAG
+    prompt = create_rag_prompt(user_prompt)
+    rag_chain = create_rag_chain(retriever, prompt, llm)
 
-    # ---------------- Query ----------------   
-    with st.spinner("🔍 Assistance is thinking"):
-        result = query_rag_chain(rag_chain, user_query)
-
-    st.markdown(result.content)
+    # Query input
+    user_query = st.text_input("💬 Ask your Risk Analysis query:", placeholder="e.g., What are the main risks in this project?")
+    # Process query only when user enters something
+    if user_query:
+        with st.spinner("🔍 Analyzing..."):
+            try:
+                result = query_rag_chain(rag_chain, user_query)
+                st.markdown("📊 Analysis Result:")
+                st.markdown(result)
+            except Exception as e:
+                st.error(f"❌ Error processing query: {str(e)}")
 
 # -------------------------------------------------------------------
 # 12. MAIN
