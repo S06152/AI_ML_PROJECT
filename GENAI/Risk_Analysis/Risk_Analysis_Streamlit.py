@@ -11,6 +11,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from langchain_core.language_models.base import BaseLanguageModel
 from langchain_groq import ChatGroq
+from langchain_core.output_parsers import StrOutputParser
 import tempfile
 
 # -------------------------------------------------------------------
@@ -271,44 +272,20 @@ def create_rag_chain(retriever: VectorStoreRetriever, prompt: ChatPromptTemplate
         }
         | prompt
         | llm
+        | StrOutputParser()
     )
     
     return rag_chain
 
 # -------------------------------------------------------------------
-# 10. QUERY FUNCTION
-# -------------------------------------------------------------------
-
-def query_rag_chain( rag_chain, query: str) -> str:
-    
-    """
-    Query the RAG chain and return the response content.
-    
-    Parameters:
-    -----------
-    rag_chain : Runnable
-        The RAG chain to query
-    query : str
-        The question or prompt to send to the RAG chain
-    
-    Returns:
-    --------
-    str
-        The content of the response from the RAG chain
-    """
-   
-    response = rag_chain.invoke(query)
-    
-    # Ensure the response is returned as a string
-    return response if isinstance(response, str) else response.content
-
-# -------------------------------------------------------------------
-# 11. Streamlit UI
+# 10. Streamlit UI
 # -------------------------------------------------------------------
 def streamlit_app():
     st.set_page_config(page_title = "Project Risk Analysis Assist", page_icon = "🔍", layout = "wide")
     st.title("🔍 Project Risk Analysis Assist")
-    
+    # Query input
+    user_query = st.text_input("💬 Ask your Project Risk Analysis query:", placeholder="Ask your Project Risk Analysis query")
+
     st.sidebar.header("⚙️ Configuration")
     api_key = st.sidebar.text_input("🔑 Groq API Key:", type = "password")
     model = st.sidebar.selectbox("🧠 LLM Model:", ["qwen/qwen3-32b", "groq/compound-mini", "llama-3.1-8b-instant", "openai/gpt-oss-120b"])
@@ -321,16 +298,8 @@ def streamlit_app():
     uploaded_file = st.sidebar.file_uploader("📂 Upload your document", type=["txt", "pdf", "docx", "csv", "xlsx"], help="Supported file types: .txt, .pdf, .docx, .csv, .xlsx")
 
     # Validation checks
-    if not api_key:
-        st.warning("⚠️ Please enter your Groq API Key in the sidebar to proceed.")
-        st.stop()
-
-    if not user_prompt:
-        st.warning("⚠️ Custom prompt message is required.")
-        st.stop()
-
-    if not uploaded_file:
-        st.info("📁 Please upload an Excel (.xlsx) document in the sidebar to proceed.")
+    if not api_key or not uploaded_file or not user_prompt:
+        st.info("⬅️ Please complete configuration in sidebar.")
         st.stop()
 
     # Validate file type
@@ -355,13 +324,11 @@ def streamlit_app():
     prompt = create_rag_prompt(user_prompt)
     rag_chain = create_rag_chain(retriever, prompt, llm)
 
-    # Query input
-    user_query = st.text_input("💬 Ask your Risk Analysis query:", placeholder="e.g., What are the main risks in this project?")
     # Process query only when user enters something
     if user_query:
-        with st.spinner("🔍 Analyzing..."):
+        with st.spinner("🔍 AI Assiatance is Analyzing..."):
             try:
-                result = query_rag_chain(rag_chain, user_query)
+                result = rag_chain.invoke(user_query)
                 st.markdown("📊 Analysis Result:")
                 st.markdown(result)
             except Exception as e:
