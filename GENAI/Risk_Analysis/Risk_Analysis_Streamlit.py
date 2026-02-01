@@ -298,6 +298,9 @@ def streamlit_app():
 
     user_prompt = st.sidebar.text_input("📝 System Prompt: ", help = "Enter the instructions for the LLM Model")
 
+    # File uploader for document upload in the sidebar
+    uploaded_file = st.sidebar.file_uploader("📂 Upload your document", type=["txt", "pdf", "docx", "csv", "xlsx"], help="Supported file types: .txt, .pdf, .docx, .csv, .xlsx")
+
     if not user_prompt:
         st.warning("Custom prompt message is required")
         st.stop()
@@ -305,10 +308,20 @@ def streamlit_app():
     if not api_key:
         st.warning("API Key is required")
         st.stop()
-    
+
+    if not uploaded_file:
+        st.warning("Please upload a document to proceed.")
+        st.stop()
+
+    # Validate file type
+    file_extension = uploaded_file.name.split(".")[-1].lower()
+    if file_extension != "xlsx":
+        st.warning("Only .xlsx files are currently supported.")
+        st.stop()
+
     with st.spinner("📄 Searching..."):
         # Load & prepare documents
-        documents = load_excel_documents("Sample_Airbag_ECU_SW_Development_Plan.xlsx")
+        documents = load_excel_documents(uploaded_file)
         chunks = split_documents_into_chunks(documents)
 
         # Vector store
@@ -337,4 +350,4 @@ def streamlit_app():
 # -------------------------------------------------------------------
 
 if __name__ == "__main__":
-    streamlit_app() 
+    streamlit_app()
