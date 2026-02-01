@@ -183,25 +183,13 @@ def initialize_llm(model_name: str, api_key: str , temperature: float = 0.3, max
 # 7. RAG PROMPT
 # -------------------------------------------------------------------
 
-def create_rag_prompt( ) -> ChatPromptTemplate:
+def create_rag_prompt(user_prompt: str) -> ChatPromptTemplate:
 
-    system_prompt = """
-    You are an expert Project Manager performing a management risk analysis.
-
-    Your task:
-        - Identify risks present in the provided project data
-        - List the TOP THREE management risks only
-        - Rank them from highest to lowest impact
-
-    Rules:
-        - Use ONLY the information in the provided context
-        - Do NOT infer or assume anything
-        - Do NOT use external knowledge
-        - If risk-related information is not available, respond exactly with:
-        "I cannot provide assistance on that item as the information is not available in the context."
+    system_prompt = f"""
+    {user_prompt}
 
     Context: 
-    {context}
+    {{context}}
     """
 
     prompt = ChatPromptTemplate.from_messages(
@@ -210,7 +198,7 @@ def create_rag_prompt( ) -> ChatPromptTemplate:
             ("human", "{input}")
         ]
     )
-    
+
     return prompt
 
 # -------------------------------------------------------------------
@@ -299,21 +287,54 @@ def query_rag_chain( rag_chain, query: str) -> str:
 # 11. Streamlit UI
 # -------------------------------------------------------------------
 def streamlit_app():
-    st.set_page_config(page_title = "Project Risk Analysis Assist", page_icon = "🔍", layout = "wide")
-    st.title("🔍 Project Risk Analysis Assist")
+    st.set_page_config(page_title="Project Risk Analysis Assist", page_icon="🔍", layout="wide")
 
+    # Title and Description
+    st.markdown("""
+        <h1 style='text-align: center; color: #4CAF50;'>🔍 Project Risk Analysis Assist</h1>
+        <p style='text-align: center; color: gray;'>Analyze project risks with the power of AI and document embeddings.</p>
+    """, unsafe_allow_html=True)
+
+    # Sidebar Configuration
     st.sidebar.header("⚙️ Configuration")
-    api_key = st.sidebar.text_input("🔑 Groq API Key", type = "password")
-    model = st.sidebar.selectbox("🧠 LLM Model", ["qwen/qwen3-32b", "groq/compound-mini", "llama-3.1-8b-instant", "openai/gpt-oss-120b"])
-    temperature = st.sidebar.slider("🔥 Temperature", min_value = 0.0, max_value = 1.0, value = 0.7)
-    max_tokens = st.sidebar.slider("📏 Max Tokens", min_value = 50, max_value = 300, value = 150)
-    user_query = st.text_input("Ask your Risk Analysis query")
+    api_key = st.sidebar.text_input("🔑 Groq API Key", type="password", help="Enter your Groq API key to access the LLM.")
+    model = st.sidebar.selectbox(
+        "🧠 LLM Model",
+        ["qwen/qwen3-32b", "groq/compound-mini", "llama-3.1-8b-instant", "openai/gpt-oss-120b"],
+        help="Select the language model to use for analysis."
+    )
+    temperature = st.sidebar.slider(
+        "🔥 Temperature",
+        min_value=0.0, max_value=1.0, value=0.7,
+        help="Adjust the creativity of the model's responses."
+    )
+    max_tokens = st.sidebar.slider(
+        "📏 Max Tokens",
+        min_value=50, max_value=300, value=150,
+        help="Set the maximum number of tokens for the response."
+    )
+
+    # Main Layout with Columns
+    col1, col2 = st.columns([2, 1])
+
+    with col2:  # Right column for user prompt input
+        st.markdown("""
+            <h3 style='color: #4CAF50;'>📝 Custom Prompt</h3>
+        """, unsafe_allow_html=True)
+        user_prompt = st.text_area(
+            "Provide your custom prompt message",
+            help="Enter the instructions for the AI to follow during risk analysis."
+        )
 
     if not api_key:
-        st.warning("API Key is required")
+        st.sidebar.warning("API Key is required")
         st.stop()
-    
-    with st.spinner("📄 Searching..."):
+
+    if not user_prompt:
+        st.warning("Custom prompt message is required")
+        st.stop()
+
+    with st.spinner("📄 Preparing documents..."):
         # Load & prepare documents
         documents = load_excel_documents("Sample.xlsx")
         chunks = split_documents_into_chunks(documents)
@@ -324,20 +345,37 @@ def streamlit_app():
         retriever = create_retriever(vectorstore)
 
         # Initialize GROQ LLM Model
-        llm = initialize_llm(model = model, api_key = api_key, temperature = temperature, max_tokens = max_tokens)
+        llm = initialize_llm(model=model, api_key=api_key, temperature=temperature, max_tokens=max_tokens)
 
         # RAG
-        prompt = create_rag_prompt()
+        prompt = create_rag_prompt(user_prompt)
         rag_chain = create_rag_chain(retriever, prompt, llm)
 
-    # ---------------- Query ----------------   
-    st.subheader("🧠 Risk Analysis")
-    query = st.text_input("Enter your query")
-    if st.button("🚀 Analyze"):
-        with st.spinner("🔍 Analyzing risks..."):
-            result = query_rag_chain(rag_chain, query)
-        st.subheader("📊 Management Risk Analysis")
-        st.markdown(result)
+    # Query Section
+    with col1:  # Left column for user query and results
+        st.markdown("""
+            <h3 style='color: #4CAF50;'>🧠 Risk Analysis</h3>
+        """, unsafe_allow_html=True)
+        query = st.text_input(
+            "Enter your query",
+            help="Type your question about project risks."
+        )
+        if st.button("🚀 Analyze"):
+            with st.spinner("🔍 Analyzing risks..."):
+                result = query_rag_chain(rag_chain, query)
+            st.success("Analysis complete!")
+            st.markdown("""
+                <h3 style='color: #4CAF50;'>📊 Management Risk Analysis</h3>
+            """, unsafe_allow_html=True)
+            st.markdown(result)
+
+    # Footer
+    st.markdown("""
+        <hr>
+        <footer style='text-align: center; color: gray;'>
+            Built with ❤️ using Streamlit and LangChain
+        </footer>
+    """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------------
 # 12. MAIN
@@ -346,15 +384,5 @@ def streamlit_app():
 if __name__ == "__main__":
     streamlit_app()
 
-    
-    
 
-   
 
-   
-
-   
-
-   
-
-   
