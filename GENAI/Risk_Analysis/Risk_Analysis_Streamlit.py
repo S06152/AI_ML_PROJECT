@@ -296,6 +296,7 @@ def query_rag_chain( rag_chain, query: str) -> str:
 def streamlit_app():
     st.set_page_config(page_title = "Project Risk Analysis Assist", page_icon = "🔍", layout = "wide")
     st.title("🔍 Project Risk Analysis Assist")
+    user_query = st.text_input("Ask your Risk Analysis query")
 
     st.sidebar.header("⚙️ Configuration")
     api_key = st.sidebar.text_input("🔑 Groq API Key:", type = "password")
@@ -308,12 +309,12 @@ def streamlit_app():
     # File uploader for document upload in the sidebar
     uploaded_file = st.sidebar.file_uploader("📂 Upload your document", type=["txt", "pdf", "docx", "csv", "xlsx"], help="Supported file types: .txt, .pdf, .docx, .csv, .xlsx")
 
-    if not user_prompt:
-        st.warning("Custom prompt message is required")
-        st.stop()
-
     if not api_key:
         st.warning("API Key is required")
+        st.stop()
+
+    if not user_prompt:
+        st.warning("Custom prompt message is required")
         st.stop()
 
     if not uploaded_file:
@@ -344,7 +345,6 @@ def streamlit_app():
         rag_chain = create_rag_chain(retriever, prompt, llm)
 
     # ---------------- Query ----------------   
-    user_query = st.text_input("Ask your Risk Analysis query")
     with st.spinner("🔍 Assistance is thinking"):
         result = query_rag_chain(rag_chain, user_query)
 
