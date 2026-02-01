@@ -18,7 +18,6 @@ import tempfile
 # -------------------------------------------------------------------
 
 def load_excel_documents(file) -> List[Document]:
-
     """
     Load documents from an Excel file using UnstructuredExcelLoader.
     
@@ -38,9 +37,13 @@ def load_excel_documents(file) -> List[Document]:
         temp_file.write(file.read())
         temp_file_path = temp_file.name
 
-    # Load the Excel file using the temporary file path
-    loader = UnstructuredExcelLoader(temp_file_path)
-    documents = loader.load()
+    try:
+        # Load the Excel file using the temporary file path
+        loader = UnstructuredExcelLoader(temp_file_path)
+        documents = loader.load()
+    finally:
+        # Ensure the temporary file is deleted after processing
+        os.remove(temp_file_path)
 
     return documents
 
@@ -154,14 +157,14 @@ def create_retriever(vectorstore: FAISS, search_type: str = "similarity", k: int
 # 6. LLM INITIALIZATION
 # -------------------------------------------------------------------
 
-def initialize_llm(model_name: str, api_key: str , temperature: float = 0.3, max_tokens: int = 800) -> ChatGroq:
+def initialize_llm(model: str, api_key: str , temperature: float = 0.3, max_tokens: int = 800) -> ChatGroq:
 
     """
     Initialize a ChatGroq LLM instance.
     
     Parameters:
     -----------
-    model_name : str
+    model : str
         Name of the model to use 
     api_key : str
         Groq API key. 
@@ -180,7 +183,7 @@ def initialize_llm(model_name: str, api_key: str , temperature: float = 0.3, max
     if not api_key:
         raise ValueError("GROQ_API_KEY is missing.")
                 
-    llm = ChatGroq(model_name = model_name, api_key = api_key, temperature = temperature, max_tokens = max_tokens)
+    llm = ChatGroq(model_name = model, api_key = api_key, temperature = temperature, max_tokens = max_tokens)
     
     return llm
 
