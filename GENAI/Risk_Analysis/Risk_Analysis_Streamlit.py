@@ -183,38 +183,6 @@ def initialize_llm(model_name: str, api_key: str , temperature: float = 0.3, max
 # 7. RAG PROMPT
 # -------------------------------------------------------------------
 
-'''
-def create_rag_prompt( ) -> ChatPromptTemplate:
-
-    system_prompt = """
-    You are an expert Project Manager performing a management risk analysis.
-
-    Your task:
-        - Identify risks present in the provided project data
-        - List the TOP THREE management risks only
-        - Rank them from highest to lowest impact
-
-    Rules:
-        - Use ONLY the information in the provided context
-        - Do NOT infer or assume anything
-        - Do NOT use external knowledge
-        - If risk-related information is not available, respond exactly with:
-        "I cannot provide assistance on that item as the information is not available in the context."
-
-    Context: 
-    {context}
-    """
-
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", system_prompt),
-            ("human", "{input}")
-        ]
-    )
-    
-    return prompt
-'''
-
 def create_rag_prompt(user_prompt: str) -> ChatPromptTemplate:
     system_prompt = f"""
     {user_prompt}
@@ -322,13 +290,13 @@ def streamlit_app():
     st.title("🔍 Project Risk Analysis Assist")
 
     st.sidebar.header("⚙️ Configuration")
-    api_key = st.sidebar.text_input("🔑 Groq API Key", type = "password")
-    model = st.sidebar.selectbox("🧠 LLM Model", ["qwen/qwen3-32b", "groq/compound-mini", "llama-3.1-8b-instant", "openai/gpt-oss-120b"])
-    temperature = st.sidebar.slider("🔥 Temperature", min_value = 0.0, max_value = 1.0, value = 0.7)
-    max_tokens = st.sidebar.slider("📏 Max Tokens", min_value = 50, max_value = 300, value = 150)
+    api_key = st.sidebar.text_input("🔑 Groq API Key:", type = "password")
+    model = st.sidebar.selectbox("🧠 LLM Model:", ["qwen/qwen3-32b", "groq/compound-mini", "llama-3.1-8b-instant", "openai/gpt-oss-120b"])
+    temperature = st.sidebar.slider("🔥 Temperature:", min_value = 0.0, max_value = 1.0, value = 0.7)
+    max_tokens = st.sidebar.slider("📏 Max Tokens:", min_value = 50, max_value = 300, value = 150)
     user_query = st.text_input("Ask your Risk Analysis query")
 
-    user_prompt = st.text_input("📝 Provide your custom prompt message", help="Enter the instructions for the AI to follow during risk analysis.")
+    user_prompt = st.sidebar.text_input("📝 System Prompt: ", help = "Enter the instructions for the LLM Model")
 
     if not user_prompt:
         st.warning("Custom prompt message is required")
