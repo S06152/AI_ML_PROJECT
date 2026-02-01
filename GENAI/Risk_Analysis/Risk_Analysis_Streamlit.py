@@ -11,22 +11,21 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from langchain_core.language_models.base import BaseLanguageModel
 from langchain_groq import ChatGroq
+import tempfile
 
 # -------------------------------------------------------------------
 # 1. LOAD EXCEL AS UNSTRUCTURED DOCUMENTS
 # -------------------------------------------------------------------
 
-def load_excel_documents(file: str) -> List[Document]:
+def load_excel_documents(file) -> List[Document]:
 
     """
     Load documents from an Excel file using UnstructuredExcelLoader.
     
     Parameters:
     -----------
-    file : str
+    file : UploadedFile or file-like object
         Excel file to be loaded
-    mode : str, optional
-        Loading mode for the document loader (default is "elements")
     
     Returns:
     --------
@@ -34,7 +33,13 @@ def load_excel_documents(file: str) -> List[Document]:
         List of LangChain Document objects
     """
 
-    loader = UnstructuredExcelLoader(file)
+    # Save the uploaded file to a temporary file
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as temp_file:
+        temp_file.write(file.read())
+        temp_file_path = temp_file.name
+
+    # Load the Excel file using the temporary file path
+    loader = UnstructuredExcelLoader(temp_file_path)
     documents = loader.load()
 
     return documents
