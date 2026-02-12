@@ -95,16 +95,8 @@ def initialize_llm(model: str, api_key: str):
 def create_prompt(user_instruction: str):
 
     system_prompt = """
-You are a Senior Project Risk Management Expert.
-
-Follow these rules:
-1. Use ONLY the provided context.
-2. If answer is not found, say: "Insufficient data in document."
-3. If user asks for Top 3 Risks, extract the most critical risks based on severity, impact, or likelihood.
-4. Provide structured output.
-
-User Instruction:
-{user_instruction}
+User prompt:
+{user_prompt}
 
 Context:
 {context}
@@ -115,7 +107,7 @@ Context:
             ("system", system_prompt),
             ("human", "{input}")
         ]
-    ).partial(user_instruction=user_instruction)
+    )
 
 
 # ============================================================
@@ -171,9 +163,9 @@ def streamlit_app():
         ]
     )
 
-    user_instruction = st.sidebar.text_area(
-        "📝 System Instruction",
-        value="Provide top three project risks with explanation and mitigation."
+    user_prompt = st.sidebar.text_area(
+        "📝 System Prompt",
+        value="Enter the Prompt based on your project or requirement"
     )
 
     uploaded_file = st.sidebar.file_uploader(
@@ -181,7 +173,7 @@ def streamlit_app():
         type=["xlsx"]
     )
 
-    if not api_key or not uploaded_file or not user_instruction:
+    if not api_key or not uploaded_file or not user_prompt:
         st.info("⬅️ Please complete configuration in sidebar.")
         st.stop()
 
@@ -204,7 +196,7 @@ def streamlit_app():
 
     # ---------------- LLM & RAG ----------------
     llm = initialize_llm(model, api_key)
-    prompt = create_prompt(user_instruction)
+    prompt = create_prompt(user_prompt)
     rag_chain = create_rag_chain(retriever, prompt, llm)
 
     # ---------------- Query ----------------
