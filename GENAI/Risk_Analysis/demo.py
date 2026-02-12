@@ -96,7 +96,7 @@ def create_prompt(user_instruction: str):
 
     system_prompt = """
 User prompt:
-{user_prompt}
+"{{user_prompt}}"
 
 Context:
 {context}
