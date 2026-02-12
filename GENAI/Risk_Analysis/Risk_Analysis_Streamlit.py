@@ -205,6 +205,8 @@ def create_rag_prompt(user_prompt: str) -> ChatPromptTemplate:
     ChatPromptTemplate
         Prompt template for the RAG chain
     """
+    st.write("Display user prompt : ", user_prompt)
+
     system_prompt = f"""
     {user_prompt}
 
@@ -310,27 +312,41 @@ def streamlit_app():
 
     # Load & prepare documents
     documents = load_excel_documents(uploaded_file)
+    st.write("Display document :", documents)
+
     chunks = split_documents_into_chunks(documents)
+    st.write("Display chunks :", chunks)
 
     # Vector store
     embeddings = create_embeddings()
+    st.write("Display embeddings :", embeddings)
+
     vectorstore = create_faiss_vectorstore(chunks, embeddings)
+    st.write("Display vectorstore :", vectorstore)
+
     retriever = create_retriever(vectorstore)
+    st.write("Display retriever :", retriever)
 
     # Initialize GROQ LLM Model
     llm = initialize_llm(model=model, api_key=api_key, temperature=temperature, max_tokens=max_tokens)
+    st.write("Display llm :", llm)
 
     # RAG
     prompt = create_rag_prompt(user_prompt)
+    st.write("Display prompt :", prompt)
+
     rag_chain = create_rag_chain(retriever, prompt, llm)
+    st.write("Display rag_chain :", rag_chain)
 
     # Process query only when user enters something
     if user_query:
+        st.write("Display user_query :", user_query)
         with st.spinner("🔍 AI Assiatance is Analyzing..."):
             try:
                 result = rag_chain.invoke(user_query)
                 st.markdown("📊 Analysis Result:")
-                st.markdown(result)
+                #st.markdown(result)
+                st.write(result)
             except Exception as e:
                 st.error(f"❌ Error processing query: {str(e)}")
 
