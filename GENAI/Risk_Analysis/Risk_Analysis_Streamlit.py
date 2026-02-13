@@ -206,10 +206,12 @@ def create_rag_prompt(user_prompt: str) -> ChatPromptTemplate:
         Prompt template for the RAG chain
     """
 
-    system_prompt = f"""
-    User prompt : {user_prompt}
+    system_prompt = """
+    User prompt:
+    "{{user_prompt}}"
 
-    Context : {{context}}
+    Context:
+    {context}
     """
 
     prompt = ChatPromptTemplate.from_messages(
@@ -290,7 +292,7 @@ def streamlit_app():
     api_key = st.sidebar.text_input("🔑 Groq API Key:", type = "password")
     model = st.sidebar.selectbox("🧠 Select LLM Model:", ["qwen/qwen3-32b", "groq/compound-mini", "llama-3.1-8b-instant", "openai/gpt-oss-120b"])
     temperature = st.sidebar.slider("🔥 Temperature:", min_value = 0.0, max_value = 1.0, value = 0.2)
-    max_tokens = st.sidebar.slider("📏 Max Tokens:", min_value = 50, max_value = 800, value = 300)
+    max_tokens = st.sidebar.slider("📏 Max Tokens:", min_value = 50, max_value = 2000, value = 800)
     user_prompt = st.sidebar.text_area("📝 System Prompt", placeholder = "Enter the Prompt based on your project or requirement")
 
     # File uploader for document upload in the sidebar
@@ -338,7 +340,7 @@ def streamlit_app():
         with st.spinner("🔍 AI Assiatance is Analyzing..."):
             try:
                 result = rag_chain.invoke(user_query)
-                st.markdown("Analysis Result:")
+                st.markdown("## 📊 Risk Analysis Result")
                 st.write(result)
 
                 # Optional: Show retrieved documents
