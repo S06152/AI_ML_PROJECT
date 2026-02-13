@@ -1,6 +1,8 @@
 import os
-import streamlit as st
+import tempfile
 from typing import List
+import streamlit as st
+
 from langchain_core.documents import Document
 from langchain_community.document_loaders import UnstructuredExcelLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -9,24 +11,22 @@ from langchain_community.vectorstores import FAISS
 from langchain_core.vectorstores import VectorStoreRetriever
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
 from langchain_core.language_models.base import BaseLanguageModel
 from langchain_groq import ChatGroq
-from langchain_core.output_parsers import StrOutputParser
-import tempfile
 
 # -------------------------------------------------------------------
 # 1. LOAD EXCEL AS UNSTRUCTURED DOCUMENTS
 # -------------------------------------------------------------------
 
-def load_excel_documents(file) -> List[Document]:
+def load_excel_documents(uploaded_file) -> List[Document]:
     """
     Load documents from an Excel file using UnstructuredExcelLoader.
     
     Parameters:
     -----------
-    file : UploadedFile or file-like object
-        Excel file to be loaded
-    
+    uploaded_file : UploadedFile or file-like object
+                    Excel file to be loaded
     Returns:
     --------
     List[Document]
@@ -34,8 +34,8 @@ def load_excel_documents(file) -> List[Document]:
     """
 
     # Save the uploaded file to a temporary file
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as temp_file:
-        temp_file.write(file.read())
+    with tempfile.NamedTemporaryFile(delete = False, suffix = ".xlsx") as temp_file:
+        temp_file.write(uploaded_file.read())
         temp_file_path = temp_file.name
 
     try:
@@ -52,7 +52,7 @@ def load_excel_documents(file) -> List[Document]:
 # 2. SPLIT DOCUMENTS
 # -------------------------------------------------------------------
 
-def split_documents_into_chunks(documents: List[Document], chunk_size: int = 400, chunk_overlap: int = 100) -> List[Document]:
+def split_documents_into_chunks(documents: List[Document], chunk_size: int = 800, chunk_overlap: int = 150) -> List[Document]:
 
     """
     Split documents into smaller chunks using RecursiveCharacterTextSplitter.
@@ -129,7 +129,7 @@ def create_faiss_vectorstore(documents: List[Document], embeddings: HuggingFaceE
 # 5. RETRIEVER
 # -------------------------------------------------------------------
 
-def create_retriever(vectorstore: FAISS, search_type: str = "similarity", k: int = 3) -> VectorStoreRetriever:
+def create_retriever(vectorstore: FAISS, search_type: str = "mmr", k: int = 5) -> VectorStoreRetriever:
 
     """
     Create a retriever from a FAISS vector store.
@@ -142,7 +142,7 @@ def create_retriever(vectorstore: FAISS, search_type: str = "similarity", k: int
         Type of search to perform (default is "similarity")
         Options: "similarity", "mmr", "similarity_score_threshold"
         k : int, optional
-        Number of documents to retrieve (default is 3)
+        Number of documents to retrieve (default is 5)
     
     Returns:
     --------
@@ -158,7 +158,7 @@ def create_retriever(vectorstore: FAISS, search_type: str = "similarity", k: int
 # 6. LLM INITIALIZATION
 # -------------------------------------------------------------------
 
-def initialize_llm(model: str, api_key: str, temperature: float = 0.3, max_tokens: int = 800) -> ChatGroq:
+def initialize_llm(model: str, api_key: str, temperature: float = 0.2, max_tokens: int = 800) -> ChatGroq:
 
     """
     Initialize a ChatGroq LLM instance.
@@ -170,9 +170,9 @@ def initialize_llm(model: str, api_key: str, temperature: float = 0.3, max_token
     api_key : str
         Groq API key. 
     temperature : float
-        Sampling temperature (default is 0.7)
+        Sampling temperature (default is 0.2)
     max_tokens : int
-        Maximum tokens in response (default is 300)
+        Maximum tokens in response (default is 800)
     
     Returns:
     --------
@@ -181,9 +181,9 @@ def initialize_llm(model: str, api_key: str, temperature: float = 0.3, max_token
     """
     # Get API key from parameter or environment
     if not api_key:
-        raise ValueError("GROQ_API_KEY is missing.")
+        raise ValueError("GROQ API Key is missing")
                 
-    llm = ChatGroq(model=model, api_key=api_key, temperature=temperature, max_tokens=max_tokens)
+    llm = ChatGroq(model = model, api_key = api_key, temperature = temperature, max_tokens = max_tokens)
     
     return llm
 
@@ -205,13 +205,11 @@ def create_rag_prompt(user_prompt: str) -> ChatPromptTemplate:
     ChatPromptTemplate
         Prompt template for the RAG chain
     """
-    st.write("Display user prompt : ", user_prompt)
 
-    system_prompt = f"""
-    {user_prompt}
+    system_prompt = """
+    User prompt : {user_prompt}
 
-    Context: 
-    {{context}}
+    Context : {context}
     """
 
     prompt = ChatPromptTemplate.from_messages(
@@ -283,21 +281,20 @@ def create_rag_chain(retriever: VectorStoreRetriever, prompt: ChatPromptTemplate
 # 10. Streamlit UI
 # -------------------------------------------------------------------
 def streamlit_app():
-    st.set_page_config(page_title = "Project Risk Analysis Assist", page_icon = "🔍", layout = "wide")
-    st.title("🔍 Project Risk Analysis Assist")
-    # Query input
-    user_query = st.text_input("💬 Ask your Project Risk Analysis query:", placeholder="Ask your Project Risk Analysis query")
 
+    st.set_page_config(page_title = "Project Risk Intelligence", page_icon = "🔍", layout = "wide")
+    st.title("🔍 Project Risk Intelligence Assistant")
+
+    # Sidebar
     st.sidebar.header("⚙️ Configuration")
     api_key = st.sidebar.text_input("🔑 Groq API Key:", type = "password")
-    model = st.sidebar.selectbox("🧠 LLM Model:", ["qwen/qwen3-32b", "groq/compound-mini", "llama-3.1-8b-instant", "openai/gpt-oss-120b"])
-    temperature = st.sidebar.slider("🔥 Temperature:", min_value = 0.0, max_value = 1.0, value = 0.7)
-    max_tokens = st.sidebar.slider("📏 Max Tokens:", min_value = 50, max_value = 300, value = 150)
-
-    user_prompt = st.sidebar.text_area("📝 System Prompt: ", help = "Enter the instructions for the LLM Model")
+    model = st.sidebar.selectbox("🧠 Select LLM Model:", ["qwen/qwen3-32b", "groq/compound-mini", "llama-3.1-8b-instant", "openai/gpt-oss-120b"])
+    temperature = st.sidebar.slider("🔥 Temperature:", min_value = 0.0, max_value = 1.0, value = 0.2)
+    max_tokens = st.sidebar.slider("📏 Max Tokens:", min_value = 50, max_value = 800, value = 300)
+    user_prompt = st.sidebar.text_area("📝 System Prompt", placeholder = "Enter the Prompt based on your project or requirement")
 
     # File uploader for document upload in the sidebar
-    uploaded_file = st.sidebar.file_uploader("📂 Upload your document", type=["txt", "pdf", "docx", "csv", "xlsx"], help="Supported file types: .txt, .pdf, .docx, .csv, .xlsx")
+    uploaded_file = st.sidebar.file_uploader("📂 Upload your document", type = ["txt", "pdf", "docx", "csv", "xlsx"], help = "Supported file types: .txt, .pdf, .docx, .csv, .xlsx")
 
     # Validation checks
     if not api_key or not uploaded_file or not user_prompt:
@@ -310,43 +307,47 @@ def streamlit_app():
         st.warning("Only .xlsx files are currently supported.")
         st.stop()
 
-    # Load & prepare documents
-    documents = load_excel_documents(uploaded_file)
-    st.write("Display document :", documents)
+    # Processing the Document once
+    if "vectorstore" not in st.session_state:
+        with st.spinner("Processing document...."):
+            # Load and split documents
+            documents = load_excel_documents(uploaded_file)
+            chunks = split_documents_into_chunks(documents)
 
-    chunks = split_documents_into_chunks(documents)
-    st.write("Display chunks :", chunks)
-
-    # Vector store
-    embeddings = create_embeddings()
-    st.write("Display embeddings :", embeddings)
-
-    vectorstore = create_faiss_vectorstore(chunks, embeddings)
-    st.write("Display vectorstore :", vectorstore)
-
+            # Vector store
+            embeddings = create_embeddings()
+            vectorstore = create_faiss_vectorstore(chunks, embeddings)
+            st.session_state.vectorstore = vectorstore
+        st.success("✅ Document processed successfully!")
+    
+    # Create Retriever
+    vectorstore = st.session_state.vectorstore
     retriever = create_retriever(vectorstore)
-    st.write("Display retriever :", retriever)
 
     # Initialize GROQ LLM Model
-    llm = initialize_llm(model=model, api_key=api_key, temperature=temperature, max_tokens=max_tokens)
-    st.write("Display llm :", llm)
+    llm = initialize_llm(model = model, api_key = api_key, temperature = temperature, max_tokens = max_tokens)
 
     # RAG
     prompt = create_rag_prompt(user_prompt)
-    st.write("Display prompt :", prompt)
-
     rag_chain = create_rag_chain(retriever, prompt, llm)
-    st.write("Display rag_chain :", rag_chain)
 
-    # Process query only when user enters something
+    # Query input
+    user_query = st.text_input("💬 Ask your Project Risk Query:", placeholder = "Enter your query")
+
     if user_query:
-        st.write("Display user_query :", user_query)
         with st.spinner("🔍 AI Assiatance is Analyzing..."):
             try:
                 result = rag_chain.invoke(user_query)
-                st.markdown("📊 Analysis Result:")
-                #st.markdown(result)
+                st.markdown("Analysis Result:")
                 st.write(result)
+
+                # Optional: Show retrieved documents
+                with st.expander("🔍 View Retrieved Context"):
+                    docs = retriever.invoke(user_query)
+                    for i, doc in enumerate(docs):
+                        st.markdown(f"**Chunk {i+1}:**")
+                        st.write(doc.page_content)
+
             except Exception as e:
                 st.error(f"❌ Error processing query: {str(e)}")
 
