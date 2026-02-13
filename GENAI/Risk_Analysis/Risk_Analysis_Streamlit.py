@@ -285,7 +285,7 @@ def create_rag_chain(retriever: VectorStoreRetriever, prompt: ChatPromptTemplate
 def streamlit_app():
 
     st.set_page_config(page_title = "Project Risk Intelligence", page_icon = "🔍", layout = "wide")
-    st.title("🔍 Project Risk Intelligence Assistant")
+    st.title("🔍 Project Risk Document Intelligence Assistant")
 
     # Sidebar
     st.sidebar.header("⚙️ Configuration")
@@ -294,7 +294,8 @@ def streamlit_app():
     temperature = st.sidebar.slider("🔥 Temperature:", min_value = 0.0, max_value = 1.0, value = 0.2)
     max_tokens = st.sidebar.slider("📏 Max Tokens:", min_value = 50, max_value = 2000, value = 800)
     user_prompt = st.sidebar.text_area("📝 System Prompt", placeholder = "Enter the Prompt based on your project or requirement")
-
+    user_query = st.text_input(placeholder = "Enter your query")
+    
     # File uploader for document upload in the sidebar
     uploaded_file = st.sidebar.file_uploader("📂 Upload your document", type = ["txt", "pdf", "docx", "csv", "xlsx"], help = "Supported file types: .txt, .pdf, .docx, .csv, .xlsx")
 
@@ -334,8 +335,6 @@ def streamlit_app():
     rag_chain = create_rag_chain(retriever, prompt, llm)
 
     # Query input
-    user_query = st.text_input("💬 Ask your Project Risk Query:", placeholder = "Enter your query")
-
     if user_query:
         with st.spinner("🔍 AI Assiatance is Analyzing..."):
             try:
