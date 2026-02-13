@@ -206,10 +206,10 @@ def create_rag_prompt(user_prompt: str) -> ChatPromptTemplate:
         Prompt template for the RAG chain
     """
 
-    system_prompt = """
+    system_prompt = f"""
     User prompt : {user_prompt}
 
-    Context : {context}
+    Context : {{context}}
     """
 
     prompt = ChatPromptTemplate.from_messages(
