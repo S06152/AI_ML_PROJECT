@@ -1,5 +1,4 @@
-from src.ui.loadui import LoadStreamlitUI
+from src.main import load_langgraph_agenticai_app
 
-if __name__ == "__main__":
-    ui = LoadStreamlitUI()
-    ui.load_streamlit_ui()
+if __name__=="__main__":
+    load_langgraph_agenticai_app()
